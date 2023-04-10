@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+
+    <script type="text/javascript">
+
+        const uploadFile = (ev, spec) => {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = async () => {
+                try {
+                    this.document.getElementById(spec).value = '';
+                    this.document.getElementById(spec).value = reader.result;
+                } catch (err) {
+                    console.log('Fail to read file stream')
+                }
+            };
+            reader.onerror = (error) => {
+                console.log('Failed to upload file')
+            };
+            reader.readAsText(file);
+
+        }
+
+        const parseResponse = (data) => {
+            const res = document.getElementById('response');
+            res.style.display = 'flex';
+            const root = data['breaking-changes'];
+            if(root && root.length > 0) {
+                let htmlStr = '<div class="result-container">';
+                root.forEach(element => {
+                    htmlStr += '<div>'
+                    htmlStr += '<div class="row-result">' +
+                        (element.level === 0 ? '<span class="warning">warning </span>': '<span class="error">error </span>') +
+                        '[<span class="id-color">' + element.id + '</span>]</div>';
+                    htmlStr += '<div class="row-result">' +
+                        'in API <span class="path-color">' + element.operation + ' ' + element.path + '</span></div>';
+                    htmlStr += '<div class="row-result">' +
+                        element['text'] + '</div>';
+                    htmlStr += '<div class="row-result">&nbsp;</div>';
+                });
+                htmlStr += '</div>'
+                res.innerHTML = htmlStr;
+            } else {
+                res.innerHTML = '<div class="row-result">No Changes</div>'
+            }
+        }
+
+        const sendBreakingReq = (baseSpec, revSpec) => {
+            let _body = new URLSearchParams();
+            _body.set('base', baseSpec.value);
+            _body.set('revision', revSpec.value);
+
+            fetch('https://api.oasdiff.com/breaking-changes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type':  'application/x-www-form-urlencoded'
+                },
+                body: _body
+            })
+                .then((response) => {
+                    return response.json()
+                })
+                .then((data) => {
+                    parseResponse(data);
+                })
+        };
+
+        const submitBreakingChanges = () => {
+            const frm = document.getElementsByName('confirmationForm')[0];
+            const original = document.getElementById('base');
+            const revision = document.getElementById('revision');
+            sendBreakingReq(original, revision)
+        }
+    </script>
+
+    <style>
+        body {
+            /* background: linear-gradient(0deg, #060522 30%, #061434); */
+            background: #000;
+        }
+
+        button {
+            border-radius: 9999px;
+            height: 50px;
+            padding: 0.8rem;
+            font-size: 20px;;
+            font-weight: 500;
+            background-color: rgba(55,48,163,.2);
+            outline-color: rgba(9,7,58,.5);
+            color: rgb(254,252,232,1);
+            cursor: pointer;
+            transition-duration: .15s;
+            transition-property: all;
+            transition-timing-function: cubic-bezier(.4,0,.2,1);
+        }
+
+        #form {
+            height: 100vh;
+        }
+
+        .parent {
+            display: flex;
+            justify-content: center;
+        }
+        .child {
+            margin: 0 30px;
+        }
+
+        .headers {
+            color: #fff;
+        }
+        .response {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            font-size: 25px;
+            margin-top: 30px;
+            color:#fff;
+        }
+        .result-container {
+            border: 1px solid;
+            border-radius: 30px;
+            padding: 30px;
+        }
+        .row-result {
+            margin-left: 20px;
+        }
+        .warning {
+            color: blueviolet;
+        }
+        .error {
+            color: crimson;
+        }
+        .id-color {
+            color: gold;
+        }
+        .path-color {
+            color: greenyellow;
+        }
+        .fileInput {
+            color: #fff;
+        }
+
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <div id="form">
+        <form action="https://api.oasdiff.com/breaking-changes" name="confirmationForm" method="post" target="_self">
+
+            <div class="parent">
+                <div class="child">
+                    <h1 class="headers">Original Spec</h1>
+                    <div>
+                        <textarea id="base" class="text" cols="50" rows="20" name="base"></textarea>
+                    </div>
+                    <div>
+                        <input class="fileInput" type="file" onchange="uploadFile(this, 'base')"/>
+                    </div>
+                </div>
+                <div class="child">
+                    <h1 class="headers">Revised Spec</h1>
+                    <div>
+                        <textarea id="revision" class="text" cols="50" rows="20" name="revision"></textarea>
+                    </div>
+                    <div>
+                        <input class="fileInput" type="file" onchange="uploadFile(this, 'revision')"/>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+        <div style="width: 100vw; text-align: center; margin-top: 40px;">
+            <button onclick="submitBreakingChanges()" class="submitButton">
+                <span>Breaking Changes</span>
+            </button>
+        </div>
+        <div id="response" class="response"></div>
+    </div>
+</div>
+</body>
+
+</html>

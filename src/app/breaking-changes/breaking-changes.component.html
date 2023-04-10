@@ -1,0 +1,38 @@
+<div class="h-100 p-5 overflow-auto">
+    <div class="d-flex justify-content-center">
+        <div class="spec-container me-5">
+            <h1 class="headers">Original Spec</h1>
+            <textarea #original class="text" rows="20">{{originalSpec}}</textarea>
+            <div (click)="origBtn.click()">
+                <mat-icon>folder_open</mat-icon>
+                <input #origBtn type="file" class="file-upload" (change)="uploadFile($event, 'original')">
+            </div>
+        </div>
+        <div class="spec-container">
+            <h1 class="headers">Revised Spec</h1>
+            <textarea #revision class="text" rows="20" name="revision">{{revisionSpec}}</textarea>
+            <div (click)="revisionBtn.click()">
+                <mat-icon>folder_open</mat-icon>
+                <input #revisionBtn type="file" class="file-upload" (change)="uploadFile($event, 'revision')">
+            </div>
+        </div>
+    </div>
+    <div class="h-100">
+        <div class="button-container">
+            <button (click)="submitBreakingChanges(original.value, revision.value)" class="submitButton">
+                <span>Breaking Changes</span>
+            </button>
+        </div>
+        <div class="result" *ngIf="response">
+            <ag-grid-angular style="width: 100%; height: 100%"
+                             class="ag-theme-alpine"
+                             [columnDefs]="columnDefs"
+                             [defaultColDef]="defaultColDef"
+                             [rowData]="response['breaking-changes']"
+                             (gridReady)="onGridReady($event)"
+                             [animateRows]="true">
+            </ag-grid-angular>
+        </div>
+    </div>
+
+</div>
